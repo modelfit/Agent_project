@@ -1,0 +1,17 @@
+# Secrets
+.env
+credentials.json
+token.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+
+# ADK logs
+/tmp/agents_log/
+
+# OS
+.DS_Store
+Thumbs.db

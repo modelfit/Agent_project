@@ -2,6 +2,7 @@
 .env
 credentials.json
 token.json
+credentials_desktop.json
 
 # Python
 __pycache__/

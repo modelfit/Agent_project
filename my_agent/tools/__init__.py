@@ -1,15 +1,15 @@
 from .calculator_tool import calculator
-from .hijri_tool import convert_to_hijri
-from .reminder_tool import set_reminder
-from .email_tool import write_email
-from .rag_tool import search_documents
+from .hijri_tool import hijri_to_gregorian, gregorian_to_hijri
+from .email_tool import send_email
+from .reminder_tool import set_reminder, list_reminders
+# from .rag_tool import search_documents
 
-
-# uncomment the tool to test
 all_tools = [
-    # calculator,
-    # convert_to_hijri,
-    # set_reminder,
-    # write_email,
+    calculator,
+    hijri_to_gregorian,
+    gregorian_to_hijri,
+    send_email,
+    set_reminder,
+    list_reminders,
     # search_documents,
 ]

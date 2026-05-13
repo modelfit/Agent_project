@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>المساعد الذكي</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:        #0d0d0f;
+    --surface:   #131316;
+    --panel:     #1a1a1f;
+    --border:    #2a2a32;
+    --accent:    #4f8ef7;
+    --accent2:   #7c3aed;
+    --danger:    #ef4444;
+    --success:   #22c55e;
+    --text:      #e8e8f0;
+    --muted:     #6b6b80;
+    --user-bg:   #1e2a45;
+    --agent-bg:  #161619;
+    --upload-bg: #13131a;
+    --mono:      'IBM Plex Mono', monospace;
+    --sans:      'IBM Plex Sans Arabic', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    overflow: hidden;
+  }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  #sidebar-header {
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #sidebar-header h1 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    text-transform: uppercase;
+    font-family: var(--mono);
+  }
+
+  #sidebar-header p {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* Upload Zone */
+  #upload-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #upload-section h2 {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+    font-family: var(--mono);
+  }
+
+  #drop-zone {
+    border: 1.5px dashed var(--border);
+    border-radius: 10px;
+    padding: 20px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--upload-bg);
+    position: relative;
+  }
+
+  #drop-zone:hover, #drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(79,142,247,0.05);
+  }
+
+  #drop-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  #drop-zone .drop-icon {
+    font-size: 24px;
+    margin-bottom: 6px;
+  }
+
+  #drop-zone p {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  #drop-zone span {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* Upload progress */
+  #upload-status {
+    margin-top: 10px;
+    font-size: 12px;
+    min-height: 18px;
+  }
+
+  .status-idle    { color: var(--muted); }
+  .status-loading { color: var(--accent); }
+  .status-success { color: var(--success); }
+  .status-error   { color: var(--danger); }
+
+  #progress-bar-wrap {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+    display: none;
+  }
+
+  #progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+
+  /* Uploaded files list */
+  #files-section {
+    padding: 12px 16px;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  #files-section h2 {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+    font-family: var(--mono);
+  }
+
+  .file-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    margin-bottom: 6px;
+    font-size: 12px;
+    animation: slideIn 0.2s ease;
+  }
+
+  .file-item .file-icon { font-size: 16px; flex-shrink: 0; }
+  .file-item .file-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text);
+    direction: ltr;
+    text-align: left;
+  }
+  .file-item .file-size { color: var(--muted); font-family: var(--mono); font-size: 10px; }
+
+  #no-files {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    padding: 20px 0;
+  }
+
+  /* Session info */
+  #session-info {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  #session-info span { color: var(--accent); }
+
+  /* ── MAIN CHAT ── */
+  #main {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  #chat-header {
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+  }
+
+  #chat-header .title {
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 6px var(--success);
+    animation: pulse 2s infinite;
+  }
+
+  .status-dot.offline { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+
+  #clear-btn {
+    font-size: 12px;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 12px;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: all 0.15s;
+  }
+  #clear-btn:hover { color: var(--danger); border-color: var(--danger); }
+
+  /* Messages */
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scroll-behavior: smooth;
+  }
+
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-track { background: transparent; }
+  #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .msg-row {
+    display: flex;
+    gap: 12px;
+    animation: fadeUp 0.2s ease;
+  }
+
+  .msg-row.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .avatar.user-av  { background: var(--user-bg); border: 1px solid rgba(79,142,247,0.3); }
+  .avatar.agent-av { background: var(--panel);   border: 1px solid var(--border); }
+
+  .bubble {
+    max-width: 68%;
+    padding: 14px 18px;
+    border-radius: 14px;
+    font-size: 14.5px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .bubble.user {
+    background: var(--user-bg);
+    border: 1px solid rgba(79,142,247,0.25);
+    border-top-right-radius: 4px;
+  }
+
+  .bubble.assistant {
+    background: var(--agent-bg);
+    border: 1px solid var(--border);
+    border-top-left-radius: 4px;
+  }
+
+  .bubble.thinking {
+    color: var(--muted);
+    font-style: italic;
+    background: var(--agent-bg);
+    border: 1px solid var(--border);
+    border-top-left-radius: 4px;
+  }
+
+  .bubble.thinking::after {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    margin-right: 6px;
+    animation: blink 1s infinite;
+  }
+
+  .msg-time {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: var(--mono);
+    margin-top: 4px;
+    padding: 0 4px;
+  }
+
+  .msg-col { display: flex; flex-direction: column; }
+  .msg-row.user .msg-col { align-items: flex-end; }
+
+  /* Welcome message */
+  #welcome {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  #welcome .big { font-size: 40px; margin-bottom: 12px; }
+  #welcome h2 { font-size: 18px; color: var(--text); margin-bottom: 8px; }
+  #welcome p { font-size: 13px; line-height: 1.7; max-width: 360px; margin: 0 auto; }
+
+  .suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  .suggestion {
+    padding: 8px 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text);
+  }
+
+  .suggestion:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Input area */
+  #input-area {
+    padding: 16px 28px 20px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+
+  #input-wrap {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 8px 8px 14px;
+    transition: border-color 0.2s;
+  }
+
+  #input-wrap:focus-within { border-color: var(--accent); }
+
+  #user-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 14.5px;
+    font-family: var(--sans);
+    resize: none;
+    max-height: 120px;
+    line-height: 1.6;
+    padding: 4px 0;
+    direction: rtl;
+  }
+
+  #user-input::placeholder { color: var(--muted); }
+
+  #send-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    color: white;
+    font-size: 16px;
+  }
+
+  #send-btn:hover:not(:disabled) { background: #3a7de8; }
+  #send-btn:disabled { background: var(--border); cursor: not-allowed; opacity: 0.5; }
+
+  #input-hint {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+    text-align: center;
+    font-family: var(--mono);
+  }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.2; }
+  }
+
+  /* Scrollbar for sidebar */
+  #files-section::-webkit-scrollbar { width: 3px; }
+  #files-section::-webkit-scrollbar-track { background: transparent; }
+  #files-section::-webkit-scrollbar-thumb { background: var(--border); }
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<aside id="sidebar">
+
+  <div id="sidebar-header">
+    <h1>⬡ RAG &amp; Memory</h1>
+    <p>رفع الملفات وإدارة الذاكرة</p>
+  </div>
+
+  <!-- Upload Zone -->
+  <div id="upload-section">
+    <h2>رفع ملف</h2>
+    <div id="drop-zone">
+      <input type="file" id="file-input" accept=".pdf,.txt,.docx,.png,.jpg,.jpeg" multiple/>
+      <div class="drop-icon">📎</div>
+      <p>اسحب ملفاً هنا أو <span>اختر من جهازك</span></p>
+      <p style="margin-top:4px;font-size:11px;">PDF · DOCX · TXT · PNG · JPG</p>
+    </div>
+
+    <div id="progress-bar-wrap">
+      <div id="progress-bar"></div>
+    </div>
+
+    <div id="upload-status" class="status-idle">جاهز للرفع</div>
+  </div>
+
+  <!-- Uploaded files list -->
+  <div id="files-section">
+    <h2>الملفات المرفوعة</h2>
+    <div id="files-list">
+      <div id="no-files">لا توجد ملفات بعد</div>
+    </div>
+  </div>
+
+  <!-- Session info -->
+  <div id="session-info">
+    الجلسة: <span id="session-display">جاري الإنشاء...</span>
+  </div>
+
+</aside>
+
+<!-- ══ MAIN CHAT ══ -->
+<main id="main">
+
+  <div id="chat-header">
+    <div class="title">
+      <div class="status-dot" id="status-dot"></div>
+      المساعد الذكي
+    </div>
+    <button id="clear-btn" onclick="clearChat()">مسح المحادثة</button>
+  </div>
+
+  <div id="messages">
+    <div id="welcome">
+      <div class="big">🤖</div>
+      <h2>مرحباً بك في المساعد الذكي</h2>
+      <p>يمكنني مساعدتك في الحسابات، تحويل التواريخ، إرسال البريد، والبحث في الملفات المرفوعة.</p>
+      <div class="suggestions">
+        <div class="suggestion" onclick="useSuggestion(this)">كم ناتج 15 × 8؟</div>
+        <div class="suggestion" onclick="useSuggestion(this)">حوّل 2024-03-15 إلى هجري</div>
+        <div class="suggestion" onclick="useSuggestion(this)">ما الذي تحدثنا عنه سابقاً؟</div>
+        <div class="suggestion" onclick="useSuggestion(this)">ابحث في المستندات</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="input-area">
+    <div id="input-wrap">
+      <textarea
+        id="user-input"
+        rows="1"
+        placeholder="اكتب رسالتك هنا..."
+        onkeydown="handleKey(event)"
+        oninput="autoResize(this)"
+      ></textarea>
+      <button id="send-btn" onclick="sendMessage()" title="إرسال">➤</button>
+    </div>
+    <div id="input-hint">Enter للإرسال · Shift+Enter لسطر جديد</div>
+  </div>
+
+</main>
+
+<script>
+// ═══════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════
+const API_BASE   = "http://localhost:8000";
+const UPLOAD_API = "http://localhost:5000";   // separate upload server (see below)
+const APP_NAME   = "my_agent";
+const USER_ID    = "user";
+
+let sessionId    = null;
+let uploadedFiles = [];
+let isThinking   = false;
+
+
+// ═══════════════════════════════════════════════
+// SESSION
+// ═══════════════════════════════════════════════
+async function createSession() {
+  try {
+    const res = await fetch(
+      `${API_BASE}/apps/${APP_NAME}/users/${USER_ID}/sessions`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }
+    );
+    console.log("Session response status:", res.status);  // 👈 add this
+    const data = await res.json();
+    console.log("Session data:", data);                   // 👈 add this
+    sessionId = data.id;
+    document.getElementById("session-display").textContent = sessionId.slice(0, 12) + "...";
+    setOnline(true);
+  } catch (e) {
+    console.error("Session error:", e);
+    setOnline(false);
+  }
+}
+
+function setOnline(online) {
+  const dot = document.getElementById("status-dot");
+  dot.classList.toggle("offline", !online);
+}
+
+
+// ═══════════════════════════════════════════════
+// FILE UPLOAD
+// ═══════════════════════════════════════════════
+const dropZone  = document.getElementById("drop-zone");
+const fileInput = document.getElementById("file-input");
+
+dropZone.addEventListener("dragover",  e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+dropZone.addEventListener("drop", e => {
+  e.preventDefault();
+  dropZone.classList.remove("drag-over");
+  handleFiles(e.dataTransfer.files);
+});
+
+fileInput.addEventListener("change", e => handleFiles(e.target.files));
+
+async function handleFiles(files) {
+  for (const file of files) {
+    await uploadFile(file);
+  }
+}
+
+async function uploadFile(file) {
+  setUploadStatus("loading", `جاري رفع ${file.name}...`);
+  showProgressBar(true);
+  animateProgress();
+
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`${UPLOAD_API}/upload`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+
+    const data = await res.json();
+    setUploadStatus("success", `✓ تم رفع ${file.name}`);
+    addFileToList(file);
+
+    // Notify agent about the new file
+    await sendSilentMessage(`تم رفع ملف جديد باسم "${file.name}" إلى قاعدة البيانات. أخبر المستخدم أن الملف جاهز للبحث.`);
+
+  } catch (err) {
+    setUploadStatus("error", `✗ فشل رفع ${file.name}`);
+    console.error("Upload error:", err);
+  } finally {
+    showProgressBar(false);
+    fileInput.value = "";
+  }
+}
+
+function setUploadStatus(type, msg) {
+  const el = document.getElementById("upload-status");
+  el.className = `status-${type}`;
+  el.textContent = msg;
+}
+
+function showProgressBar(show) {
+  document.getElementById("progress-bar-wrap").style.display = show ? "block" : "none";
+  if (!show) document.getElementById("progress-bar").style.width = "0%";
+}
+
+function animateProgress() {
+  const bar = document.getElementById("progress-bar");
+  let w = 0;
+  const iv = setInterval(() => {
+    w = Math.min(w + Math.random() * 15, 85);
+    bar.style.width = w + "%";
+    if (w >= 85) clearInterval(iv);
+  }, 200);
+}
+
+function addFileToList(file) {
+  const noFiles = document.getElementById("no-files");
+  if (noFiles) noFiles.remove();
+
+  uploadedFiles.push(file.name);
+
+  const icons = { pdf: "📄", docx: "📝", txt: "📃", png: "🖼️", jpg: "🖼️", jpeg: "🖼️" };
+  const ext   = file.name.split(".").pop().toLowerCase();
+  const icon  = icons[ext] || "📁";
+  const size  = file.size > 1024*1024
+    ? (file.size / (1024*1024)).toFixed(1) + " MB"
+    : (file.size / 1024).toFixed(0) + " KB";
+
+  const item = document.createElement("div");
+  item.className = "file-item";
+  item.innerHTML = `
+    <span class="file-icon">${icon}</span>
+    <span class="file-name">${file.name}</span>
+    <span class="file-size">${size}</span>
+  `;
+  document.getElementById("files-list").appendChild(item);
+}
+
+
+// ═══════════════════════════════════════════════
+// CHAT
+// ═══════════════════════════════════════════════
+async function sendMessage() {
+  const input = document.getElementById("user-input");
+  const text  = input.value.trim();
+  if (!text || !sessionId || isThinking) return;
+
+  removeWelcome();
+  appendMessage(text, "user");
+  input.value = "";
+  autoResize(input);
+  await runAgent(text);
+}
+
+async function sendSilentMessage(text) {
+  if (!sessionId) return;
+  try {
+    await fetch(`${API_BASE}/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        app_name:    APP_NAME,
+        user_id:     USER_ID,
+        session_id:  sessionId,
+        new_message: { role: "user", parts: [{ text }] },
+      }),
+    });
+  } catch(e) { console.error("Silent message error:", e); }
+}
+
+async function runAgent(text) {
+  isThinking = true;
+  document.getElementById("send-btn").disabled = true;
+
+  const thinkRow = appendMessage("جاري التفكير", "thinking");
+
+  try {
+    const res = await fetch(`${API_BASE}/run_sse`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        app_name:    APP_NAME,
+        user_id:     USER_ID,
+        session_id:  sessionId,
+        new_message: { role: "user", parts: [{ text }] },
+        streaming:   true,
+      }),
+    });
+
+    const reader  = res.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText   = "";
+    let bubbleEl   = null;
+
+    thinkRow.remove();
+    
+    while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    const lines = decoder.decode(value).split("\n");
+    for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        try {
+            const event = JSON.parse(line.slice(6));
+
+            // -----------------------------------------------
+            // Only process the final response event
+            // ignore intermediate tool calls and partial chunks
+            // -----------------------------------------------
+            if (event.turn_complete === true) continue;
+            if (!event.content?.parts?.[0]?.text) continue;
+            if (event.content?.role !== "model") continue;  // 👈 only model responses
+
+            const partText = event.content.parts[0].text;
+
+            // Replace not append — fixes double response
+            fullText = partText;  // 👈 = not +=
+
+            if (!bubbleEl) {
+                const row = createMessageRow("assistant");
+                bubbleEl = row.querySelector(".bubble");
+                document.getElementById("messages").appendChild(row);
+            }
+            bubbleEl.textContent = fullText;
+            scrollBottom();
+
+        } catch(_) {}
+    }
+}
+
+    if (!bubbleEl && fullText === "") {
+      appendMessage("لم يتم الحصول على رد.", "assistant");
+    }
+
+  } catch (err) {
+    thinkRow?.remove();
+    appendMessage("خطأ في الاتصال بالخادم.", "assistant");
+    setOnline(false);
+    console.error(err);
+  }
+
+  isThinking = false;
+  document.getElementById("send-btn").disabled = false;
+  document.getElementById("user-input").focus();
+}
+
+
+// ═══════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════
+function createMessageRow(type) {
+  const avatars = { user: "👤", assistant: "🤖", thinking: "🤖" };
+  const now = new Date().toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit" });
+
+  const row = document.createElement("div");
+  row.className = `msg-row ${type === "user" ? "user" : ""}`;
+
+  row.innerHTML = `
+    <div class="avatar ${type === "user" ? "user-av" : "agent-av"}">${avatars[type] || "🤖"}</div>
+    <div class="msg-col">
+      <div class="bubble ${type}">&nbsp;</div>
+      <div class="msg-time">${now}</div>
+    </div>
+  `;
+  return row;
+}
+
+function appendMessage(text, type) {
+  removeWelcome();
+  const row    = createMessageRow(type);
+  const bubble = row.querySelector(".bubble");
+  bubble.textContent = text;
+  document.getElementById("messages").appendChild(row);
+  scrollBottom();
+  return row;
+}
+
+function removeWelcome() {
+  const w = document.getElementById("welcome");
+  if (w) w.remove();
+}
+
+function scrollBottom() {
+  const m = document.getElementById("messages");
+  m.scrollTop = m.scrollHeight;
+}
+
+function handleKey(e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 120) + "px";
+}
+
+function useSuggestion(el) {
+  document.getElementById("user-input").value = el.textContent;
+  sendMessage();
+}
+
+function clearChat() {
+  const messages = document.getElementById("messages");
+  messages.innerHTML = "";
+  sendSilentMessage("forget_everything");
+}
+
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+createSession();
+</script>
+</body>
+</html>

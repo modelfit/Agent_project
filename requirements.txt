@@ -6,3 +6,5 @@ pymupdf
 docx2txt
 langchain-text-splitters
 hijridate
+duckduckgo-search
+PyPDF2

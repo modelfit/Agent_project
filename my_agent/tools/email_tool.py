@@ -27,7 +27,7 @@ def send_email(to: str, subject: str, body: str) -> str:
             smtp.login(sender, password)
             smtp.send_message(msg)
 
-        return f"✅ تم إرسال البريد الإلكتروني إلى {to} بنجاح"
+        return f" تم إرسال البريد الإلكتروني إلى {to} بنجاح"
 
     except Exception as e:
         return f"خطأ في إرسال البريد الإلكتروني: {str(e)}"

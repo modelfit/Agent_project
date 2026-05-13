@@ -1,6 +1,16 @@
 def convert_units(value: float, from_unit: str, to_unit: str) -> str:
     """
-    تحويل وحدات مختلفة.
+    Converts a value between units. Use when the user wants to convert measurements.
+
+    Supported conversions: km↔miles, kg↔lb, celsius↔fahrenheit
+
+    Args:
+        value: The number to convert. e.g. 100
+        from_unit: The source unit. e.g. "km", "kg", "celsius"
+        to_unit: The target unit. e.g. "miles", "lb", "fahrenheit"
+
+    Returns:
+        Converted result as a string, or an error message if the conversion is unsupported.
     """
 
     try:

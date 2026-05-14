@@ -31,7 +31,6 @@ def get_supabase():
 def embed_text(text: str) -> list[float]:
     """
     Converts text to a 768-dim vector using IBM Granite.
-    Runs fully on CPU — no API calls needed.
 
     Args:
         text: any text in Arabic or English

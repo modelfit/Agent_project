@@ -5,7 +5,7 @@ def search_poems(
     query: str,
     theme: str = "",
     poet_era: str = "",
-    top_k: int = 3,
+    top_k: int = 20,
 ) -> str:
     """
     يبحث في قاعدة بيانات الأشعار العربية ويعيد أبيات ذات صلة بالموضوع.

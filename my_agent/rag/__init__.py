@@ -1,1 +1,0 @@
-# RAG module — handles file ingestion, embedding, and retrieval
